@@ -1,0 +1,52 @@
+@import url("https://fonts.googleapis.com/css2?family=Archivo+Black&family=JetBrains+Mono:wght@500;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: #111914;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  font-family: Aptos, "Segoe UI", sans-serif;
+}
+
+tbody tr {
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+
+tbody tr:hover {
+  transform: translateY(-1px);
+}
+
+tbody td {
+  border-bottom: 1px solid rgba(17, 25, 20, .08);
+  border-top: 1px solid rgba(17, 25, 20, .08);
+  background: rgba(255, 255, 255, .62);
+  padding: .85rem .75rem;
+}
+
+tbody td:first-child {
+  border-left: 1px solid rgba(17, 25, 20, .08);
+  border-radius: 1rem 0 0 1rem;
+}
+
+tbody td:last-child {
+  border-right: 1px solid rgba(17, 25, 20, .08);
+  border-radius: 0 1rem 1rem 0;
+}
+
+.link {
+  color: #0f766e;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}

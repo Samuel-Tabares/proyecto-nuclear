@@ -1,0 +1,148 @@
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "primaryColor": "#2563eb",
+    "primaryTextColor": "#ffffff",
+    "primaryBorderColor": "#1e40af",
+    "lineColor": "#64748b",
+    "secondaryColor": "#0f172a",
+    "tertiaryColor": "#f8fafc",
+    "background": "#ffffff",
+    "fontFamily": "Inter"
+  }
+}}%%
+
+erDiagram
+
+    ROLES {
+        uuid id PK
+        string nombre
+        timestamp created_at
+    }
+
+    USUARIOS {
+        uuid id PK
+        string nombre
+        string email
+        string password_hash
+        boolean activo
+        uuid rol_id FK
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    CATEGORIAS {
+        uuid id PK
+        string nombre
+        timestamp created_at
+    }
+
+    PRODUCTOS {
+        uuid id PK
+        string codigo UK
+        string nombre
+        uuid categoria_id FK
+        decimal peso
+        string ingredientes
+        string etiqueta
+        int punto_reorden
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    LOTES {
+        uuid id PK
+        uuid producto_id FK
+        string numero_lote
+        date fecha_vencimiento
+        date fecha_recepcion
+        int cantidad_inicial
+        int cantidad_actual
+        string ubicacion
+        string estado
+        timestamp created_at
+    }
+
+    ORDENES_RECEPCION {
+        uuid id PK
+        string numero_orden
+        string numero_factura
+        date fecha_recepcion
+        string estado
+        uuid usuario_id FK
+        timestamp created_at
+    }
+
+    DETALLE_RECEPCION {
+        uuid id PK
+        uuid orden_recepcion_id FK
+        uuid producto_id FK
+        int cantidad
+        timestamp created_at
+    }
+
+    DESPACHOS {
+        uuid id PK
+        string destino
+        date fecha
+        string estado
+        uuid aprobado_por FK
+        timestamp created_at
+    }
+
+    DETALLE_DESPACHO {
+        uuid id PK
+        uuid despacho_id FK
+        uuid producto_id FK
+        int cantidad
+        timestamp created_at
+    }
+
+    MOVIMIENTOS_INVENTARIO {
+        uuid id PK
+        uuid lote_id FK
+        uuid producto_id FK
+        uuid usuario_id FK
+        string tipo_movimiento
+        int cantidad
+        timestamp fecha
+    }
+
+    ALERTAS {
+        uuid id PK
+        string tipo
+        string severidad
+        string mensaje
+        uuid producto_id FK
+        uuid lote_id FK
+        boolean activa
+        timestamp fecha_generacion
+    }
+
+    ROLES ||--o{ USUARIOS : "tiene"
+
+    CATEGORIAS ||--o{ PRODUCTOS : "clasifica"
+
+    PRODUCTOS ||--o{ LOTES : "contiene"
+
+    USUARIOS ||--o{ ORDENES_RECEPCION : "registra"
+
+    ORDENES_RECEPCION ||--o{ DETALLE_RECEPCION : "incluye"
+
+    PRODUCTOS ||--o{ DETALLE_RECEPCION : "recibido"
+
+    USUARIOS ||--o{ DESPACHOS : "aprueba"
+
+    DESPACHOS ||--o{ DETALLE_DESPACHO : "incluye"
+
+    PRODUCTOS ||--o{ DETALLE_DESPACHO : "despachado"
+
+    LOTES ||--o{ MOVIMIENTOS_INVENTARIO : "genera"
+
+    PRODUCTOS ||--o{ MOVIMIENTOS_INVENTARIO : "afecta"
+
+    USUARIOS ||--o{ MOVIMIENTOS_INVENTARIO : "realiza"
+
+    PRODUCTOS ||--o{ ALERTAS : "genera"
+
+    LOTES ||--o{ ALERTAS : "genera"

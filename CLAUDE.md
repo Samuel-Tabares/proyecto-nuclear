@@ -373,7 +373,7 @@ Ejemplo:
 > **Mantén esta sección actualizada al cerrar cada paso/corte.**
 
 - [x] Paso 1 — Bootstrap Next.js
-- [ ] Paso 2 — Dependencias base
+- [x] Paso 2 — Dependencias base
 - [ ] Paso 3 — Configuración Supabase
 - [ ] Paso 4 — Schema inicial
 - [ ] Paso 5 — Autenticación
@@ -382,4 +382,4 @@ Ejemplo:
 - [ ] Paso 8 — Cierre Corte 1
 
 **Corte actual:** 1
-**Última actualización:** 2026-05-11 — Paso 1 completado (bootstrap Next.js 15)
+**Última actualización:** 2026-05-11 — Paso 2 completado (dependencias base, shadcn/ui, puerto 5175)

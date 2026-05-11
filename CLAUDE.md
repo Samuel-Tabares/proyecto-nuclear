@@ -554,10 +554,16 @@ Ejemplo:
 - [x] Paso 4 — Schema inicial ⚠️ *ejecutado con roles incorrectos — corregir en Paso 5.1*
 - [x] Paso 5 — Autenticación ⚠️ *layout.tsx usa roles incorrectos — corregir en Paso 5.1*
 - [x] **Paso 5.1 — Corrección de roles** ✅ *enum y types corregidos — 2026-05-11*
-- [ ] Paso 6 — Layout dashboard ← PRÓXIMO PASO
+
+> **⚠️ TEMPORAL activo — limpiar antes del Paso 8 (cierre Corte 1):**
+> - `supabase/migrations/20260511000001_seed_temporal.sql` — eliminar archivo y usuarios con el botón del dashboard.
+> - `lib/services/seed.ts` — eliminar archivo completo.
+> - `lib/supabase/admin.ts` — eliminar si no se usa en otro lugar.
+> - `app/(dashboard)/layout.tsx` — eliminar el bloque marcado con `⚠️ TEMPORAL`.
+- [x] Paso 6 — Layout dashboard ✅ *sidebar por rol + 4 páginas prototipo — 2026-05-11*
 - [ ] Paso 7 — Pruebas y CI
 - [ ] Paso 8 — Cierre Corte 1
 - [x] Paso 9 — Alineación arquitectónica y trazabilidad ERS/ADR
 
 **Corte actual:** 1
-**Última actualización:** 2026-05-11 — Paso 5.1 completado. Enum rol_usuario corregido a cuatro roles oficiales. Paso 6 es el próximo.
+**Última actualización:** 2026-05-11 — Paso 6 completado. Layout con sidebar por rol y páginas prototipo de inventario, recepción, despachos y reportes. Paso 7 es el próximo.

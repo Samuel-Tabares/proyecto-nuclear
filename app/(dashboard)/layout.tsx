@@ -1,9 +1,11 @@
-import { LogOut } from "lucide-react";
+import { LogOut, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { Sidebar } from "@/components/dominio/Sidebar";
 import { Button } from "@/components/ui/button";
 import { cerrarSesion, requerirRol } from "@/lib/services/auth";
+// ⚠️ TEMPORAL: eliminar este import antes de ir a producción
+import { eliminarSeed } from "@/lib/services/seed";
 import type { RolUsuario } from "@/lib/types/auth";
 
 const rolesDashboard: readonly RolUsuario[] = [
@@ -30,6 +32,32 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-dvh bg-[#f6f7f4] text-[#18201b]">
+      {/* ⚠️ TEMPORAL: eliminar este bloque antes de ir a producción */}
+      <div className="border-b border-amber-300 bg-amber-50 px-4 py-2 sm:px-6">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
+          <p className="text-xs text-amber-800">
+            <strong>Datos de prueba activos.</strong>{" "}
+            Credenciales: <code className="font-mono">admin@sgil.test</code>,{" "}
+            <code className="font-mono">jefe@sgil.test</code>,{" "}
+            <code className="font-mono">recepcion@sgil.test</code>,{" "}
+            <code className="font-mono">despacho@sgil.test</code> — contraseña{" "}
+            <code className="font-mono">Test1234!</code>
+          </p>
+          <form action={eliminarSeed}>
+            <Button
+              variant="outline"
+              size="sm"
+              type="submit"
+              className="shrink-0 border-amber-400 text-amber-800 hover:bg-amber-100"
+            >
+              <Trash2 className="h-3 w-3" />
+              Eliminar datos de prueba
+            </Button>
+          </form>
+        </div>
+      </div>
+      {/* fin bloque TEMPORAL */}
+
       <header className="sticky top-0 z-10 border-b border-[#dfe4dc] bg-white/90 backdrop-blur-sm">
         <div className="mx-auto flex min-h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">

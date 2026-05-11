@@ -10,16 +10,28 @@ Este archivo es la **fuente de instrucciones operativas** para Claude Code en es
 
 El proyecto se entrega en **tres cortes académicos** (21 abril → 26 junio 2026):
 
-- **Corte 1**: autenticación, control de acceso, fundación del proyecto.
-- **Corte 2**: productos, lotes, recepción, despachos, alertas, realtime.
-- **Corte 3**: dashboard KPI, exportación de reportes, despliegue, pruebas.
+- **Corte 1**: gestión de usuarios (RF-00), autenticación y control de acceso (RF-01, RF-02, RF-03), wireframes y prototipos de UI.
+- **Corte 2**: productos (RF-04 a RF-07), lotes (RF-08, RF-09), recepción (RF-10, RF-11), despachos (RF-12, RF-13).
+- **Corte 3**: alertas operativas y realtime (RF-14 a RF-16), dashboard KPI (RF-17), exportación de reportes (RF-18), Swagger (RF-19), despliegue, pruebas de aceptación.
 
 **Documentos de referencia** (en `docs/`):
 
-- `docs/ERS.md` — **fuente de verdad contractual**. Si dudas sobre QUÉ hacer, consúltala. Tiene IDs `RF-XX` y `RNF-XX` que debes citar en commits y PRs.
-- `docs/documento_tecnico.md` — describe arquitectura, modelo de datos y plan por cortes. Consúltalo para CÓMO hacer.
+- `docs/guia_nuclear_V_inventario_logistica.md` — **fuente de verdad primaria**. Define roles, módulos y entregables oficiales del proyecto. Si hay conflicto, gana la guía.
+- `docs/ERS.md` — **especificación contractual detallada**. Si dudas sobre QUÉ hacer, consúltala. Tiene IDs `RF-XX` y `RNF-XX` que debes citar en commits y PRs.
+- `docs/SGIL_documento_tecnico.md` — describe arquitectura, modelo de datos y plan por cortes. Consúltalo para CÓMO hacer.
+- `docs/ADR.md` — decisiones arquitectónicas justificadas (9 ADRs).
+- `docs/tradeoffs.md` — análisis de tradeoffs por ADR.
 
-**Regla de oro**: si `ERS.md` y `documento_tecnico.md` se contradicen, gana la ERS.
+**Roles del sistema** (enum `rol_usuario` en BD):
+
+| Rol | Valor BD | Permisos clave |
+|---|---|---|
+| Administrador del sistema | `admin_sistema` | Acceso total + gestión de usuarios (crear, activar, desactivar, asignar rol) |
+| Jefe de almacén | `jefe_almacen` | Acceso operativo total + aprobación de despachos + dashboard KPI |
+| Operador de recepción | `operador_recepcion` | Crear/consultar recepciones y lotes, consultar inventario |
+| Operador de despacho | `operador_despacho` | Crear/consultar despachos (pendientes de aprobación), consultar inventario |
+
+**Regla de oro**: si `ERS.md` y `SGIL_documento_tecnico.md` se contradicen, gana la ERS. Si alguno contradice la guía, gana la guía.
 
 ---
 
@@ -128,12 +140,13 @@ proyecto_nuclear_V/
 │   │   ├── server.ts
 │   │   ├── client.ts
 │   │   ├── middleware.ts
-│   │   └── database.types.ts           # autogenerado
+│   │   └── database.types.ts           # autogenerado con pnpm db:types
 │   ├── types/
 │   └── utils.ts
 ├── supabase/
 │   ├── migrations/
-│   │   └── 20260501000000_init.sql
+│   │   ├── 20260501000000_init.sql
+│   │   └── 20260511000000_corregir_roles.sql   # ver Paso 5.1
 │   ├── seed.sql
 │   └── config.toml
 ├── tests/
@@ -141,8 +154,12 @@ proyecto_nuclear_V/
 │   └── e2e/
 ├── docs/
 │   ├── ERS.md
-│   ├── documento_tecnico.md
-│   └── README.md
+│   ├── ADR.md
+│   ├── tradeoffs.md
+│   ├── SGIL_documento_tecnico.md
+│   ├── guia_nuclear_V_inventario_logistica.md
+│   ├── diagrama_relacion_bd.mermaid
+│   └── diagrama_arquitectonico.mermaid
 ├── public/
 ├── .env.local.example
 ├── .gitignore
@@ -176,7 +193,7 @@ pnpm --version    # debe ser >= 9
 
 Si falta `pnpm`: `npm install -g pnpm`.
 
-### Paso 1 — Bootstrap Next.js
+### Paso 1 — Bootstrap Next.js ✅
 
 ```bash
 pnpm create next-app@latest . \
@@ -188,7 +205,7 @@ Cuando pregunte por Turbopack: **sí**.
 
 Commit: `chore: bootstrap Next.js 15 con TypeScript y Tailwind`
 
-### Paso 2 — Dependencias base
+### Paso 2 — Dependencias base ✅
 
 ```bash
 pnpm add @supabase/supabase-js @supabase/ssr @tanstack/react-query zod
@@ -204,7 +221,7 @@ pnpm dlx shadcn@latest add button input label form table card dialog toast sonne
 
 Commit: `chore: dependencias base y shadcn/ui`
 
-### Paso 3 — Configuración de Supabase
+### Paso 3 — Configuración de Supabase ✅
 
 1. Crear proyecto en https://supabase.com (Free tier).
 2. Copiar URL y keys al `.env.local` siguiendo `.env.local.example` (créalo tú primero).
@@ -225,12 +242,13 @@ Crear `middleware.ts` en raíz para refrescar sesión.
 
 Commit: `feat(supabase): configuración inicial de cliente y middleware`
 
-### Paso 4 — Schema inicial (Corte 1)
+### Paso 4 — Schema inicial (Corte 1) ✅ ⚠️ *roles incorrectos — ver Paso 5.1*
 
 Crear migración `supabase/migrations/20260501000000_init.sql` con:
 
-- Enum `rol_usuario` con valores `encargado`, `jefe_produccion`, `dueno`.
+- Enum `rol_usuario` con valores `admin_sistema`, `jefe_almacen`, `operador_recepcion`, `operador_despacho`.
 - Tabla `perfiles` (extiende `auth.users`) con `id`, `nombre`, `rol`, `activo`, `creado_en`.
+- Default de `rol` = `'operador_despacho'` (rol más restrictivo como fallback seguro).
 - Trigger para crear perfil al registrar usuario.
 - RLS habilitado en `perfiles` con políticas básicas.
 
@@ -238,7 +256,7 @@ Aplicar:
 
 ```bash
 supabase db push
-pnpm db:types   # script en package.json que genera lib/supabase/database.types.ts
+pnpm db:types   # genera lib/supabase/database.types.ts
 ```
 
 Agregar a `package.json`:
@@ -251,86 +269,197 @@ Agregar a `package.json`:
 
 Commit: `feat(db): schema inicial con perfiles y RLS`
 
-### Paso 5 — Autenticación (RF-01, RF-02, RF-03)
+### Paso 5 — Autenticación (RF-00, RF-01, RF-02, RF-03) ✅ ⚠️ *roles incorrectos en layout — ver Paso 5.1*
 
 Crear:
 
 - `app/(auth)/login/page.tsx` — formulario con email/contraseña, validación Zod.
 - `app/(dashboard)/layout.tsx` — protege rutas, lee rol del usuario, redirige a `/login` si no hay sesión.
-- `lib/services/auth.ts` — `iniciarSesion`, `cerrarSesion`, `obtenerUsuarioActual`.
-- Helper `requerirRol(rol[])` para guards en server components.
+- `lib/services/auth.ts` — `iniciarSesion`, `cerrarSesion`, `obtenerUsuarioActual`, `requerirRol(rol[])`.
+- `lib/schemas/auth.ts` — esquema Zod del formulario de login.
+- `lib/types/auth.ts` — tipos `RolUsuario`, `PerfilUsuario`, `UsuarioActual`.
 
-Validar contra ERS RF-01, RF-02, RF-03.
+Validar contra ERS RF-00, RF-01, RF-02, RF-03.
 
 Commit: `feat(auth): login, logout y control de acceso por rol`
 
-### Paso 6 — Layout del dashboard
+---
 
-- Sidebar con navegación (visibilidad condicionada por rol).
-- Header con usuario actual y botón logout.
-- Página vacía `/` con bienvenida.
+### Paso 5.1 — Corrección de roles ⚠️ PENDIENTE — ejecutar antes del Paso 6
 
-Para rol `dueno`: ocultar enlaces a acciones de edición.
+El Paso 4 se ejecutó con valores de enum incorrectos (`encargado`, `jefe_produccion`, `dueno`).  
+El Paso 5 construyó sobre esos valores. Este paso los corrige completamente.
 
-Commit: `feat(ui): layout principal del dashboard`
+**Archivos afectados:**
+- `supabase/migrations/` → nueva migración
+- `lib/supabase/database.types.ts` → regenerar
+- `app/(dashboard)/layout.tsx` → actualizar valores hardcodeados
+
+#### 1. Crear migración correctiva
+
+Crear `supabase/migrations/20260511000000_corregir_roles.sql`:
+
+```sql
+-- Renombrar los tres valores incorrectos a los correctos
+ALTER TYPE public.rol_usuario RENAME VALUE 'encargado'      TO 'admin_sistema';
+ALTER TYPE public.rol_usuario RENAME VALUE 'jefe_produccion' TO 'jefe_almacen';
+ALTER TYPE public.rol_usuario RENAME VALUE 'dueno'           TO 'operador_despacho';
+
+-- Agregar el cuarto valor que faltaba
+ALTER TYPE public.rol_usuario ADD VALUE IF NOT EXISTS 'operador_recepcion';
+
+-- Corregir el default de la columna rol
+ALTER TABLE public.perfiles
+  ALTER COLUMN rol SET DEFAULT 'operador_despacho';
+```
+
+Aplicar:
+
+```bash
+supabase db push
+pnpm db:types
+```
+
+#### 2. Corregir `app/(dashboard)/layout.tsx`
+
+Reemplazar los valores hardcodeados de roles en este archivo:
+
+```typescript
+// ANTES (incorrecto)
+const rolesDashboard: readonly RolUsuario[] = [
+  "encargado",
+  "jefe_produccion",
+  "dueno",
+];
+
+const etiquetasRol: Record<RolUsuario, string> = {
+  encargado: "Encargado de inventarios",
+  jefe_produccion: "Jefe de producción",
+  dueno: "Dueño",
+};
+
+// DESPUÉS (correcto)
+const rolesDashboard: readonly RolUsuario[] = [
+  "admin_sistema",
+  "jefe_almacen",
+  "operador_recepcion",
+  "operador_despacho",
+];
+
+const etiquetasRol: Record<RolUsuario, string> = {
+  admin_sistema: "Administrador del sistema",
+  jefe_almacen: "Jefe de almacén",
+  operador_recepcion: "Operador de recepción",
+  operador_despacho: "Operador de despacho",
+};
+```
+
+#### 3. Verificar que no queden referencias a roles viejos
+
+```bash
+grep -r "encargado\|jefe_produccion\|dueno" app/ lib/ --include="*.ts" --include="*.tsx"
+```
+
+El resultado debe estar vacío. Si aparece algo, corregirlo antes de continuar.
+
+#### 4. Verificar que TypeScript compila sin errores
+
+```bash
+pnpm build
+```
+
+Commit: `fix(db): corregir enum rol_usuario a los cuatro roles oficiales`
+
+```
+Refs: RF-00, RF-02, RNF-03
+```
+
+---
+
+### Paso 6 — Layout del dashboard y páginas prototipo
+
+Este paso cubre **dos entregables del Corte 1** según la guía del proyecto nuclear:
+- Entregable A: layout base con navegación por rol (fundación técnica).
+- Entregable B: wireframes/prototipos interactivos de las pantallas principales (Programación con Tecnologías Web).
+
+#### 6a — Layout base
+
+- Sidebar con navegación cuya visibilidad está condicionada al rol del usuario.
+- Header con nombre del usuario, etiqueta del rol y botón de logout.
+- Página principal `/` con bienvenida y resumen del rol activo.
+
+**Visibilidad de enlaces y acciones por rol:**
+
+| Sección / Acción | `admin_sistema` | `jefe_almacen` | `operador_recepcion` | `operador_despacho` | Fuente |
+|---|---|---|---|---|---|
+| Gestión de usuarios | ✅ | ❌ | ❌ | ❌ | RF-00 |
+| Productos — ver lista | ✅ | ✅ | ✅ | ✅ | RF-05 |
+| Productos — crear/editar/baja | ✅ | ✅ | ❌ | ❌ | RF-04, RF-06 |
+| Productos — punto de reorden | ✅ | ✅ | ❌ | ❌ | RF-07 |
+| Lotes — ver lista | ✅ | ✅ | ✅ | ✅ | RF-09 |
+| Inventario — stock actual | ✅ | ✅ | ✅ | ✅ | RF-05 |
+| Recepción — ver historial | ✅ | ✅ | ✅ | ✅ | RF-11 |
+| Recepción — crear orden | ✅ | ✅ | ✅ | ❌ | RF-10 |
+| Despachos — ver historial | ✅ | ✅ | ✅ | ✅ | RF-13 |
+| Despachos — crear | ✅ | ✅ | ❌ | ✅ | RF-12 |
+| Despachos — aprobar | ✅ | ✅ | ❌ | ❌ | RF-12 |
+| Alertas — panel | ✅ | ✅ | ✅ | ✅ | RF-16 |
+| Dashboard KPI | ✅ | ✅ | ❌ | ❌ | RF-17 |
+| Reportes — exportar | ✅ | ✅ | ❌ | ❌ | RF-18 |
+
+> **Regla de implementación:** la columna de navegación oculta los *botones de acción* (crear, aprobar, exportar) cuando el rol no tiene permiso. Las páginas de consulta/lista (historial de recepciones, historial de despachos) son accesibles para todos los roles — solo se oculta el botón "Nueva recepción" u "Nuevo despacho" según corresponda.
+
+Commit: `feat(ui): layout principal del dashboard con navegación por rol`
+
+#### 6b — Páginas prototipo (wireframes interactivos)
+
+Crear una página prototipo por cada módulo principal. Son páginas con UI real (componentes shadcn) pero **sin datos reales** — usan datos estáticos o estructuras vacías. El objetivo es mostrar la arquitectura visual del sistema y validarla con Ingeniería Industrial.
+
+**Pantallas requeridas por la guía del proyecto nuclear:**
+
+| Ruta | Archivo | Qué mostrar |
+|---|---|---|
+| `/inventario` | `app/(dashboard)/inventario/page.tsx` | Tabla de productos con columnas: código, nombre, categoría, stock total, estado de alerta. Barra de búsqueda y filtro por categoría. Botón "Nuevo producto" (visible solo para `admin_sistema` y `jefe_almacen`). |
+| `/recepcion` | `app/(dashboard)/recepcion/page.tsx` | Tabla de órdenes de recepción con columnas: número de orden, factura, fecha, estado. Botón "Nueva recepción" (visible para `admin_sistema`, `jefe_almacen`, `operador_recepcion`). |
+| `/despachos` | `app/(dashboard)/despachos/page.tsx` | Tabla de despachos con columnas: fecha, destino interno, estado, unidades. Botón "Nuevo despacho" (visible para `admin_sistema`, `jefe_almacen`, `operador_despacho`). Botón "Aprobar" por fila (visible solo para `admin_sistema` y `jefe_almacen`). |
+| `/reportes` | `app/(dashboard)/reportes/page.tsx` | Cards con los cuatro KPIs: rotación de inventario, exactitud, nivel de servicio, utilización de almacén. Gráficos vacíos (placeholder con Recharts). Accesible solo para `admin_sistema` y `jefe_almacen`. |
+
+**Reglas para las páginas prototipo:**
+- Usar componentes `Card`, `Table`, `Badge`, `Button` de shadcn/ui.
+- Los datos son arrays TypeScript estáticos definidos en el mismo archivo — no llamadas a Supabase.
+- Cada página debe llamar a `requerirRol([...])` con los roles permitidos para que el guard de acceso funcione desde ya.
+- Las páginas quedarán funcionales en apariencia; en Corte 2 se reemplazarán los datos estáticos por datos reales de Supabase.
+
+Commit: `feat(ui): páginas prototipo de inventario, recepción, despachos y reportes`
+
+```
+Refs: RF-04, RF-05, RF-10, RF-11, RF-12, RF-13, RF-17
+```
 
 ### Paso 7 — Pruebas y CI
 
 - `vitest.config.ts` con cobertura.
-- Una prueba de ejemplo en `tests/unit/` del helper de roles.
-- `playwright.config.ts` y prueba E2E del login.
+- Una prueba unitaria en `tests/unit/` del helper `requerirRol`.
+- `playwright.config.ts` y prueba E2E del flujo de login/logout.
 - `.github/workflows/ci.yml`: lint + typecheck + test en cada PR.
 
 Commit: `chore: configuración de pruebas y CI`
 
 ### Paso 8 — Cierre del Corte 1
 
-- Documentar en `README.md` cómo arrancar local.
-- Verificar que `pnpm build` pasa sin errores.
+- Documentar en `README.md` cómo arrancar local (`pnpm install`, `.env.local`, `supabase db push`, `pnpm dev`).
+- Verificar que `pnpm build` pasa sin errores ni warnings de TypeScript.
 - Verificar despliegue en Vercel preview.
 
 Commit + tag: `v0.1.0-corte1`
 
-### Paso 9 — Alineación arquitectónica y trazabilidad ERS/ADR
+### Paso 9 — Alineación arquitectónica y trazabilidad ERS/ADR ✅ *completado 2026-05-11*
 
-Objetivo: alinear implementación, ADRs y documentación técnica según observaciones de trazabilidad.
+Los documentos `docs/ADR.md`, `docs/tradeoffs.md`, `docs/SGIL_documento_tecnico.md`, `docs/diagrama_relacion_bd.mermaid` y `docs/diagrama_arquitectonico.mermaid` ya fueron actualizados y alineados.
 
-Actualizar:
+Si en futuros cortes se introducen nuevas decisiones arquitectónicas, crear un ADR-010 o superior y actualizar el resumen en `docs/ADR.md`. Nunca eliminar ADRs previos; si una decisión cambia, marcarla como `[Reemplazado]`.
 
-- `docs/documento_tecnico.md`
-- `docs/tradeoffs.md`
-- `docs/ADR.md`
-
-Cambios requeridos:
-
-1. Documentar explícitamente que las reglas de:
-   - FEFO
-   - punto de reorden
-   - alertas
-   - vencimiento
-
-   viven en `lib/domain/` como lógica de dominio pura.
-
-2. Documentar que FEFO también se utiliza como criterio de visualización de lotes (RF-09), no solo como política de despacho.
-
-3. Relacionar RLS con cumplimiento de:
-   - RNF-03 (seguridad)
-   - RNF-08 (Ley 1581 / protección de datos)
-
-4. Mantener trazabilidad consistente entre:
-   - ERS
-   - ADRs
-   - documento técnico
-   - tradeoffs
-
-Verificar:
-
-- Que ningún RF/RNF importante quede sin referencia arquitectónica.
-- Que la documentación refleje exactamente la implementación real del sistema.
-
-Commit:
-
-`docs: alineación de trazabilidad entre ERS, ADR y documento técnico`
+Commit: `docs: alineación de trazabilidad entre ERS, ADR y documento técnico`
 
 ---
 
@@ -375,6 +504,12 @@ Refs: RF-01, RNF-03
 ```
 
 ```
+fix(db): corregir enum rol_usuario a los cuatro roles oficiales
+
+Refs: RF-00, RF-02, RNF-03
+```
+
+```
 feat(db): tabla lotes con trazabilidad FEFO
 
 Refs: RF-08, RF-09
@@ -416,12 +551,13 @@ Ejemplo:
 - [x] Paso 1 — Bootstrap Next.js
 - [x] Paso 2 — Dependencias base
 - [x] Paso 3 — Configuración Supabase
-- [x] Paso 4 — Schema inicial
-- [x] Paso 5 — Autenticación
-- [ ] Paso 6 — Layout dashboard
+- [x] Paso 4 — Schema inicial ⚠️ *ejecutado con roles incorrectos — corregir en Paso 5.1*
+- [x] Paso 5 — Autenticación ⚠️ *layout.tsx usa roles incorrectos — corregir en Paso 5.1*
+- [x] **Paso 5.1 — Corrección de roles** ✅ *enum y types corregidos — 2026-05-11*
+- [ ] Paso 6 — Layout dashboard ← PRÓXIMO PASO
 - [ ] Paso 7 — Pruebas y CI
 - [ ] Paso 8 — Cierre Corte 1
-- [ ] Paso 9 — Alineación arquitectónica y trazabilidad ERS/ADR
+- [x] Paso 9 — Alineación arquitectónica y trazabilidad ERS/ADR
 
 **Corte actual:** 1
-**Última actualización:** 2026-05-11 — Paso 5 completado (login, logout y guard por rol)
+**Última actualización:** 2026-05-11 — Paso 5.1 completado. Enum rol_usuario corregido a cuatro roles oficiales. Paso 6 es el próximo.

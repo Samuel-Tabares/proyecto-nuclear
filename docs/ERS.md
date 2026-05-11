@@ -61,7 +61,7 @@ Los requisitos funcionales se organizan por módulo del sistema. Cada requisito 
 | **Prioridad** | Alta |
 | **Entradas** | Correo electrónico registrado, contraseña. |
 | **Salidas** | Token JWT válido, redirección al dashboard según rol. Mensaje de error si las credenciales son incorrectas. |
-| **Reglas de negocio** | La contraseña debe almacenarse como hash (bcrypt). El token expira en 8 horas. Un usuario inactivo no puede iniciar sesión. |
+| **Reglas de negocio** | La contraseña debe almacenarse como hash (bcrypt). El refresh token expira en 8 horas. Un usuario inactivo no puede iniciar sesión. |
 
 #### RF-02 — Control de acceso por rol
 

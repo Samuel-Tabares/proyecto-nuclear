@@ -50,7 +50,7 @@ Se adopta una arquitectura en cuatro capas lógicas:
 
 1. **Presentación** — componentes React renderizados por Next.js (Server y Client Components).
 2. **Aplicación** — casos de uso en Route Handlers (`app/api/`) y Server Actions.
-3. **Dominio** — reglas de negocio puras en `lib/domain/` (FEFO, cálculo de alertas, validaciones).
+3. **Dominio** — reglas de negocio puras en `lib/domain/` (FEFO, cálculo de alertas, validaciones y reglas operativas como punto de reorden, stock mínimo y vencimiento).
 4. **Infraestructura** — repositorios que encapsulan el acceso a Supabase en `lib/repositories/`.
 
 Las capas se separan **lógicamente** en un único proyecto Next.js (no en dos repositorios). Esto se justifica con detalle en ADR-006. La comunicación entre cliente y servidor usa JSON sobre HTTP; el cliente nunca contiene lógica de negocio.
@@ -147,7 +147,7 @@ El centro de distribución maneja productos perecederos (tortas, galletas, bizco
 
 Se implementa la política **FEFO (First Expired, First Out)** como estrategia por defecto: al registrar un despacho interno, el sistema selecciona automáticamente el lote con la fecha de vencimiento más próxima.
 
-La lógica se encapsula en `lib/domain/politicas-despacho/` siguiendo el patrón **Strategy**:
+La misma política FEFO también se utiliza como criterio de visualización en la consulta de lotes (RF-09), ordenando los lotes por fecha de vencimiento más próxima.
 
 ```typescript
 interface PoliticaDespacho {
@@ -313,7 +313,7 @@ Aunque un atacante saltara los guards del backend, Postgres rechazaría la opera
 
 **Consecuencias**
 
-*Positivas:* Si una validación de backend se olvida o se introduce un bug, la BD sigue protegiendo los datos. Las políticas RLS son código declarativo, fácil de auditar. Cumple RNF-03 (seguridad) de forma robusta.
+*Positivas:* Si una validación de backend se olvida o se introduce un bug, la BD sigue protegiendo los datos. Las políticas RLS son código declarativo, fácil de auditar. Cumple RNF-03 (seguridad) y contribuye al cumplimiento de RNF-08 (protección de datos y confidencialidad) mediante control de acceso multinivel.
 
 *Negativas:* Las políticas RLS se deben mantener sincronizadas con la lógica de roles del backend. Si se agrega un rol nuevo, hay que actualizar políticas en cada tabla. Probar RLS requiere pruebas explícitas por rol (cubierto en estrategia de pruebas). Cliente con `SUPABASE_SERVICE_ROLE_KEY` salta RLS — esa clave solo se usa en código servidor confiable y nunca se expone al navegador.
 

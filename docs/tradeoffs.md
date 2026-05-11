@@ -93,7 +93,7 @@ Los atributos de prioridad media (rendimiento, escalabilidad, disponibilidad) so
 | **Reducción de pérdidas** | El cliente pierde menos producto por vencimiento; es el beneficio directo del sistema. | Solo funciona si todos los lotes tienen la fecha de vencimiento registrada correctamente. |
 | **Extensibilidad** | Se pueden agregar políticas alternativas (picking urgente, FIFO específico) sin tocar despacho. Cumple Open/Closed. | El equipo debe entender el patrón Strategy desde el inicio; puede parecer sobreingeniería para un solo caso. |
 | **Testabilidad** | Cada política es una función pura, fácil de cubrir con pruebas unitarias sin BD. | Los casos de prueba se multiplican: hay que validar cada política y cada combinación con el módulo de despacho. |
-| **Usabilidad** | El operario no decide manualmente qué lote despachar, lo que reduce errores humanos. | Si la fecha en sistema no coincide con la realidad física, el operario despacha el lote incorrecto sin saberlo. |
+| **Usabilidad** | El operario no decide manualmente qué lote despachar, lo que reduce errores humanos. FEFO también mantiene una visualización consistente de lotes en consultas (RF-09). | Si la fecha en sistema no coincide con la realidad física, el operario despacha el lote incorrecto y la UI puede mostrar un orden inconsistente. |
 | **Casos excepcionales** | La política `PoliticaManual` permite cubrir casos de picking urgente o fecha especial. | Cada excepción manual requiere justificación registrada, lo que agrega fricción al flujo. |
 
 **Conclusión:** se sacrifica control manual del operario y cierta complejidad inicial a cambio de menos pérdidas y un módulo extensible. La decisión es correcta porque ataca el problema central del cliente: los productos perecederos. Requiere disciplina al capturar fechas en la recepción.
@@ -159,7 +159,7 @@ Los atributos de prioridad media (rendimiento, escalabilidad, disponibilidad) so
 | **Rendimiento** | RLS se evalúa en planes de consulta optimizados por Postgres. | Una política mal escrita puede degradar el rendimiento de consultas grandes. |
 | **Mensajes de error** | Backend valida primero y devuelve 403 con mensaje claro. | Sin esa validación previa, los errores de RLS aparecen como "row violates policy" — confusos para el usuario. |
 
-**Conclusión:** se sacrifica mantenimiento adicional (políticas en cada tabla) a cambio de defensa en profundidad. Para un sistema bajo Ley 1581 con tres roles diferenciados, el costo es plenamente justificado.
+**Conclusión:** se sacrifica mantenimiento adicional (políticas en cada tabla) a cambio de defensa en profundidad. La decisión fortalece el cumplimiento de RNF-03 (seguridad) y RNF-08 (protección de datos personales bajo Ley 1581 de 2012). Para un sistema con tres roles diferenciados y datos operativos sensibles, el costo es plenamente justificado.
 
 ---
 

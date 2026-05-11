@@ -143,7 +143,7 @@ graph TB
 |---|---|---|
 | Presentación | UI, formularios, dashboard, navegación | `app/(routes)/`, `components/` |
 | Aplicación | Casos de uso, orquestación, validación Zod | `lib/services/`, `app/api/` |
-| Dominio | Reglas de negocio (FEFO, alertas, validaciones) | `lib/domain/` |
+| Dominio | Reglas de negocio (FEFO, alertas, validaciones, punto de reorden y vencimiento) | `lib/domain/` |
 | Infraestructura | Cliente Supabase, repositorios, logging | `lib/supabase/`, `lib/repositories/` |
 
 ### 4.3 Estructura de carpetas propuesta
@@ -166,7 +166,7 @@ sgil/
 │   ├── ui/              # shadcn/ui
 │   └── domain/          # tabla productos, panel alertas, etc.
 ├── lib/
-│   ├── domain/          # reglas FEFO, cálculo alertas
+│   ├── domain/          # reglas FEFO, cálculo alertas, punto de reorden y vencimiento
 │   ├── services/        # casos de uso
 │   ├── repositories/    # acceso a Supabase
 │   ├── supabase/        # cliente server/browser
@@ -267,7 +267,7 @@ erDiagram
 
 ### 5.2 Reglas de negocio críticas
 
-1. **FEFO en despachos:** al aprobar un despacho, el sistema descuenta de los lotes con `fecha_vencimiento` más cercana primero (RF-12).
+1. **FEFO en despachos y visualización:** al aprobar un despacho, el sistema descuenta de los lotes con `fecha_vencimiento` más cercana primero (RF-12). La consulta de lotes también usa FEFO para ordenar visualmente los lotes por vencimiento próximo (RF-09).
 2. **Stock por producto = suma de `cantidad_actual` de lotes activos.**
 3. **Stock nunca negativo:** una transacción de despacho que dejaría stock negativo se aborta.
 4. **Punto de reorden:** cuando `stock_total <= punto_reorden`, se genera/mantiene una alerta activa (RF-14). Solo una alerta activa por producto.
@@ -321,6 +321,7 @@ Aunque un atacante saltara el frontend y el backend, la BD rechazaría la operac
 - No se almacenan datos personales de clientes finales (no hay punto de venta).
 - Datos de usuarios del sistema (email, nombre) requieren consentimiento al registro.
 - Acuerdo de confidencialidad con la empresa cliente se firma fuera del software.
+- El acceso a información operativa se restringe mediante JWT + Row Level Security (RLS), contribuyendo al cumplimiento de RNF-08 sobre confidencialidad y control de acceso.
 
 ---
 

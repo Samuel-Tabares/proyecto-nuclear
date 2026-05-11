@@ -372,7 +372,7 @@ Ejemplo:
 
 > **Mantén esta sección actualizada al cerrar cada paso/corte.**
 
-- [ ] Paso 1 — Bootstrap Next.js
+- [x] Paso 1 — Bootstrap Next.js
 - [ ] Paso 2 — Dependencias base
 - [ ] Paso 3 — Configuración Supabase
 - [ ] Paso 4 — Schema inicial
@@ -382,4 +382,4 @@ Ejemplo:
 - [ ] Paso 8 — Cierre Corte 1
 
 **Corte actual:** 1
-**Última actualización:** _(actualizar en cada cierre de paso)_
+**Última actualización:** 2026-05-11 — Paso 1 completado (bootstrap Next.js 15)

@@ -6,15 +6,17 @@ import { cerrarSesion, requerirRol } from "@/lib/services/auth";
 import type { RolUsuario } from "@/lib/types/auth";
 
 const rolesDashboard: readonly RolUsuario[] = [
-  "encargado",
-  "jefe_produccion",
-  "dueno",
+  "admin_sistema",
+  "jefe_almacen",
+  "operador_recepcion",
+  "operador_despacho",
 ];
 
 const etiquetasRol: Record<RolUsuario, string> = {
-  encargado: "Encargado de inventarios",
-  jefe_produccion: "Jefe de producción",
-  dueno: "Dueño",
+  admin_sistema: "Administrador del sistema",
+  jefe_almacen: "Jefe de almacén",
+  operador_recepcion: "Operador de recepción",
+  operador_despacho: "Operador de despacho",
 };
 
 export default async function DashboardLayout({

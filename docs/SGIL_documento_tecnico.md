@@ -164,7 +164,7 @@ sgil/
 │       └── reportes/pdf/
 ├── components/
 │   ├── ui/              # shadcn/ui
-│   └── domain/          # tabla productos, panel alertas, etc.
+│   └── dominio/         # tabla productos, panel alertas, etc.
 ├── lib/
 │   ├── domain/          # reglas FEFO, cálculo alertas, punto de reorden y vencimiento
 │   ├── services/        # casos de uso
@@ -421,7 +421,7 @@ El proyecto se divide en tres cortes académicos según la matriz de trazabilida
 
 | Entorno | Frontend | Base de datos |
 |---|---|---|
-| Desarrollo | `localhost:3000` | Supabase local (Docker) |
+| Desarrollo | `localhost:5175` | Supabase local (Docker) |
 | Staging | Vercel preview | Proyecto Supabase staging |
 | Producción | Vercel production | Proyecto Supabase production |
 

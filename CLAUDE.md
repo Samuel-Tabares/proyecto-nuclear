@@ -417,11 +417,11 @@ Ejemplo:
 - [x] Paso 2 — Dependencias base
 - [x] Paso 3 — Configuración Supabase
 - [x] Paso 4 — Schema inicial
-- [ ] Paso 5 — Autenticación
+- [x] Paso 5 — Autenticación
 - [ ] Paso 6 — Layout dashboard
 - [ ] Paso 7 — Pruebas y CI
 - [ ] Paso 8 — Cierre Corte 1
 - [ ] Paso 9 — Alineación arquitectónica y trazabilidad ERS/ADR
 
 **Corte actual:** 1
-**Última actualización:** 2026-05-11 — Paso 2 completado (dependencias base, shadcn/ui, puerto 5175)
+**Última actualización:** 2026-05-11 — Paso 5 completado (login, logout y guard por rol)

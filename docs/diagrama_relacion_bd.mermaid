@@ -14,135 +14,106 @@
 
 erDiagram
 
-    ROLES {
+    PERFILES {
         uuid id PK
         string nombre
-        timestamp created_at
-    }
-
-    USUARIOS {
-        uuid id PK
-        string nombre
-        string email
-        string password_hash
+        enum rol "admin_sistema|jefe_almacen|operador_recepcion|operador_despacho"
         boolean activo
-        uuid rol_id FK
-        timestamp created_at
-        timestamp updated_at
-    }
-
-    CATEGORIAS {
-        uuid id PK
-        string nombre
-        timestamp created_at
+        timestamp creado_en
     }
 
     PRODUCTOS {
         uuid id PK
         string codigo UK
         string nombre
-        uuid categoria_id FK
+        enum categoria "tortas|galleteria|postres"
         decimal peso
-        string ingredientes
+        text ingredientes
         string etiqueta
         int punto_reorden
-        timestamp created_at
-        timestamp updated_at
+        int dias_min_vencimiento
+        boolean activo
+        timestamp creado_en
+        timestamp actualizado_en
+    }
+
+    BODEGAS {
+        uuid id PK
+        enum tipo "principal|produccion|neveras"
+        string nombre
     }
 
     LOTES {
         uuid id PK
         uuid producto_id FK
+        uuid bodega_id FK
         string numero_lote
         date fecha_vencimiento
         date fecha_recepcion
         int cantidad_inicial
         int cantidad_actual
-        string ubicacion
-        string estado
-        timestamp created_at
+        enum estado "vigente|agotado|vencido"
+        timestamp creado_en
     }
 
     ORDENES_RECEPCION {
         uuid id PK
-        string numero_orden
-        string numero_factura
+        string numero_orden UK
+        string numero_factura UK
         date fecha_recepcion
-        string estado
         uuid usuario_id FK
-        timestamp created_at
-    }
-
-    DETALLE_RECEPCION {
-        uuid id PK
-        uuid orden_recepcion_id FK
-        uuid producto_id FK
-        int cantidad
-        timestamp created_at
+        enum estado "pendiente|recibida"
+        timestamp creado_en
     }
 
     DESPACHOS {
         uuid id PK
-        string destino
         date fecha
-        string estado
+        string destino_interno
+        uuid usuario_id FK
         uuid aprobado_por FK
-        timestamp created_at
+        enum estado "pendiente|aprobado|despachado"
+        timestamp creado_en
     }
 
-    DETALLE_DESPACHO {
-        uuid id PK
-        uuid despacho_id FK
-        uuid producto_id FK
-        int cantidad
-        timestamp created_at
-    }
-
-    MOVIMIENTOS_INVENTARIO {
+    MOVIMIENTOS {
         uuid id PK
         uuid lote_id FK
-        uuid producto_id FK
-        uuid usuario_id FK
-        string tipo_movimiento
+        enum tipo "entrada|salida|ajuste"
         int cantidad
-        timestamp fecha
+        uuid referencia_id
+        uuid usuario_id FK
+        timestamp creado_en
     }
 
     ALERTAS {
         uuid id PK
-        string tipo
-        string severidad
-        string mensaje
+        enum tipo "stock_minimo|vencimiento_proximo|vencido"
         uuid producto_id FK
         uuid lote_id FK
+        enum severidad "advertencia|critico"
         boolean activa
-        timestamp fecha_generacion
+        timestamp creado_en
     }
 
-    ROLES ||--o{ USUARIOS : "tiene"
+    PERFILES ||--o{ ORDENES_RECEPCION : "registra"
 
-    CATEGORIAS ||--o{ PRODUCTOS : "clasifica"
+    PERFILES ||--o{ DESPACHOS : "crea"
 
-    PRODUCTOS ||--o{ LOTES : "contiene"
+    PERFILES ||--o{ DESPACHOS : "aprueba"
 
-    USUARIOS ||--o{ ORDENES_RECEPCION : "registra"
+    PERFILES ||--o{ MOVIMIENTOS : "realiza"
 
-    ORDENES_RECEPCION ||--o{ DETALLE_RECEPCION : "incluye"
-
-    PRODUCTOS ||--o{ DETALLE_RECEPCION : "recibido"
-
-    USUARIOS ||--o{ DESPACHOS : "aprueba"
-
-    DESPACHOS ||--o{ DETALLE_DESPACHO : "incluye"
-
-    PRODUCTOS ||--o{ DETALLE_DESPACHO : "despachado"
-
-    LOTES ||--o{ MOVIMIENTOS_INVENTARIO : "genera"
-
-    PRODUCTOS ||--o{ MOVIMIENTOS_INVENTARIO : "afecta"
-
-    USUARIOS ||--o{ MOVIMIENTOS_INVENTARIO : "realiza"
+    PRODUCTOS ||--o{ LOTES : "tiene"
 
     PRODUCTOS ||--o{ ALERTAS : "genera"
 
+    BODEGAS ||--o{ LOTES : "almacena"
+
+    ORDENES_RECEPCION ||--|{ LOTES : "genera"
+
+    LOTES ||--o{ MOVIMIENTOS : "afecta"
+
     LOTES ||--o{ ALERTAS : "genera"
+
+    DESPACHOS ||--o{ MOVIMIENTOS : "compone"

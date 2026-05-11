@@ -22,6 +22,15 @@ Los ADRs se almacenan en el repositorio bajo `docs/adr/` con numeración secuenc
 
 El SGIL es un sistema web de gestión de inventario y logística para un centro de distribución de productos de pastelería (tortas caseras, galletería, bizcocho y postres) en el Quindío. Los requisitos funcionales y reglas de negocio fueron levantados con los estudiantes de Ingeniería Industrial que realizan su práctica en el centro de distribución.
 
+**Roles del sistema (4 roles, definidos por la Guía del Proyecto Nuclear):**
+
+| Rol (sistema) | Valor en BD | Responsabilidad |
+|---|---|---|
+| Administrador del sistema | `admin_sistema` | Gestión de usuarios, configuración, acceso total |
+| Jefe de almacén | `jefe_almacen` | Supervisión operativa completa, aprobación de despachos |
+| Operador de recepción | `operador_recepcion` | Registro de entradas de mercancía y lotes |
+| Operador de despacho | `operador_despacho` | Registro de salidas (despachos pendientes de aprobación) |
+
 **Información clave del dominio confirmada por Ingeniería Industrial:**
 
 - El inventario se controla actualmente en Excel de forma manual; el conteo físico es diario.
@@ -106,7 +115,7 @@ Las operaciones que tocan stock (recepción, despacho, ajuste) se ejecutan en **
 
 **Contexto**
 
-El sistema tiene tres roles con permisos distintos: Encargado de Inventarios (acceso total), Jefe de Producción (acceso total) y Dueños (solo lectura). Se necesita un mecanismo de autenticación que transporte el rol del usuario en cada petición, sea compatible con Next.js (Server Components, Route Handlers, middleware), y no requiera mantener estado de sesión en el servidor de aplicación.
+El sistema tiene cuatro roles con permisos distintos: Administrador del sistema (acceso total + gestión de usuarios), Jefe de almacén (acceso operativo total + aprobación de despachos), Operador de recepción (registra entradas) y Operador de despacho (registra salidas, pendientes de aprobación). Se necesita un mecanismo de autenticación que transporte el rol del usuario en cada petición, sea compatible con Next.js (Server Components, Route Handlers, middleware), y no requiera mantener estado de sesión en el servidor de aplicación.
 
 **Decisión**
 
@@ -131,7 +140,7 @@ Las contraseñas se almacenan como hash bcrypt (gestionado por Supabase Auth). L
 
 *Positivas:* No se implementa código propio de autenticación, reduciendo superficie de error y vulnerabilidad. Refresh tokens automáticos eliminan la fricción de re-login durante la jornada. El rol viaja en el JWT y se valida sin consultar la BD en cada petición. Si en el futuro se requiere OAuth o magic link, se activa desde el dashboard de Supabase.
 
-*Negativas:* La duración del access token (1 h por defecto) implica que si se cambia el rol de un usuario en BD, el cambio no se refleja hasta el siguiente refresh. Para roles que rara vez cambian este trade-off es aceptable. Si se requiere revocación inmediata, hay que invocar `supabase.auth.admin.signOut(userId)`.
+*Negativas:* La duración del access token (1 h por defecto) implica que si se cambia el rol de un usuario en BD, el cambio no se refleja hasta el siguiente refresh. Para roles que rara vez cambian este trade-off es aceptable. Si se requiere revocación inmediata (ej. operador desactivado por el admin), hay que invocar `supabase.auth.admin.signOut(userId)`.
 
 ---
 
@@ -181,7 +190,7 @@ El módulo de despacho recibe la política como dependencia, permitiendo agregar
 
 **Contexto**
 
-Ingeniería Industrial confirmó que el centro de distribución trabaja actualmente con Excel para todos sus registros: inventario, conteo diario, control de lotes y planificación de producción. El cliente necesita reportes que pueda seguir editando, filtrar y compartir por correo después de descargarlos. Los tres roles (Dueños, Jefe de Producción, Encargado de Inventarios) deben poder acceder a los reportes. La guía del Proyecto Nuclear también exige reportes en PDF y/o Excel.
+Ingeniería Industrial confirmó que el centro de distribución trabaja actualmente con Excel para todos sus registros: inventario, conteo diario, control de lotes y planificación de producción. El cliente necesita reportes que pueda seguir editando, filtrar y compartir por correo después de descargarlos. El Administrador del sistema y el Jefe de almacén acceden al dashboard KPI y pueden exportar reportes completos. La guía del Proyecto Nuclear exige reportes en PDF y/o Excel.
 
 **Decisión**
 
@@ -278,7 +287,7 @@ Esto permite que el código propio del equipo se concentre en la lógica de domi
 
 **Contexto**
 
-ADR-003 establece que cada Route Handler valida el rol del JWT antes de procesar mutaciones. Sin embargo, una sola capa de defensa es frágil: un error de programación que omita la validación, una ruta nueva sin guard, o un bug en el middleware podría permitir que un Dueño (solo lectura) ejecutara una operación de escritura. La ERS exige (RF-02) que el control de acceso por rol sea estricto.
+ADR-003 establece que cada Route Handler valida el rol del JWT antes de procesar mutaciones. Sin embargo, una sola capa de defensa es frágil: un error de programación que omita la validación, una ruta nueva sin guard, o un bug en el middleware podría permitir que un operador de recepción o despacho (con permisos restringidos) ejecutara una operación fuera de su alcance. La ERS exige (RF-02) que el control de acceso por rol sea estricto.
 
 **Decisión**
 
@@ -294,12 +303,12 @@ CREATE POLICY productos_select ON productos
 
 CREATE POLICY productos_insert ON productos
   FOR INSERT WITH CHECK (
-    auth.jwt() ->> 'rol' IN ('encargado', 'jefe_produccion')
+    auth.jwt() ->> 'rol' IN ('admin_sistema', 'jefe_almacen')
   );
 
 CREATE POLICY productos_update ON productos
   FOR UPDATE USING (
-    auth.jwt() ->> 'rol' IN ('encargado', 'jefe_produccion')
+    auth.jwt() ->> 'rol' IN ('admin_sistema', 'jefe_almacen')
   );
 ```
 
@@ -350,7 +359,7 @@ La **fuente de verdad sigue siendo Postgres**. Realtime es solo un canal de noti
 
 **Consecuencias**
 
-*Positivas:* WebSockets sin servidor propio. Suscripciones declarativas por tabla. Se integra con RLS: un usuario solo recibe eventos sobre filas que su rol puede ver. Cumple RF-14, RF-15 y RF-16 (alertas en tiempo real).
+*Positivas:* WebSockets sin servidor propio. Suscripciones declarativas por tabla. Se integra con RLS: un usuario solo recibe eventos sobre filas que su rol puede ver. Cumple RF-14, RF-15 y RF-16 (panel de alertas en tiempo real — Corte 3).
 
 *Negativas:* Si la conexión WebSocket se pierde, los componentes deben manejar reconexión (el SDK de Supabase lo hace, pero es bueno validarlo). El plan gratuito de Supabase tiene límite de conexiones concurrentes (200), suficiente para el alcance (RNF-01: 5 usuarios), pero a considerar si crece.
 
@@ -376,14 +385,15 @@ La **fuente de verdad sigue siendo Postgres**. Realtime es solo un canal de noti
 
 | Módulo / Requisito | ADR relacionado | Fuente del requisito |
 |---|---|---|
-| Autenticación y roles | ADR-001, ADR-003, ADR-008 | ERS RF-01, RF-02, RF-03 |
+| Autenticación y roles | ADR-001, ADR-003, ADR-008 | ERS RF-00, RF-01, RF-02, RF-03 |
 | Gestión de inventario con lotes y vencimientos | ADR-002 | ERS RF-04 a RF-09 |
 | Recepción de mercancía (con o sin orden previa) | ADR-002 | ERS RF-10, RF-11 + Industrial |
 | Picking priorizado y despacho interno | ADR-004 | Mapa de procesos — Industrial |
 | Tres bodegas: principal, producción, neveras | ADR-002 | Mapa de procesos — Industrial |
 | Reglas de negocio: FEFO, margen mínimo de vencimiento | ADR-004 | Reunión + documento Industrial |
-| Alertas en tiempo real | ADR-009 | ERS RF-14, RF-15, RF-16 |
-| Dashboard de KPIs y reportes | ADR-005 | ERS RF-17, RF-18 |
+| Alertas en tiempo real (Corte 3) | ADR-009 | ERS RF-14, RF-15, RF-16 |
+| Dashboard de KPIs y reportes (Corte 3) | ADR-005 | ERS RF-17, RF-18 |
+| Documentación Swagger (Corte 3) | ADR-006 (Route Handlers) | ERS RF-19 |
 | Exportación en Excel | ADR-005 | Reunión con Industrial |
 | Despliegue simple y sostenible | ADR-006, ADR-007 | Restricción de alcance académico |
 | Despacho al cliente final | — (fuera de alcance) | Confirmado por Industrial |

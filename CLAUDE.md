@@ -291,6 +291,47 @@ Commit: `chore: configuración de pruebas y CI`
 
 Commit + tag: `v0.1.0-corte1`
 
+### Paso 9 — Alineación arquitectónica y trazabilidad ERS/ADR
+
+Objetivo: alinear implementación, ADRs y documentación técnica según observaciones de trazabilidad.
+
+Actualizar:
+
+- `docs/documento_tecnico.md`
+- `docs/tradeoffs.md`
+- `docs/ADR.md`
+
+Cambios requeridos:
+
+1. Documentar explícitamente que las reglas de:
+   - FEFO
+   - punto de reorden
+   - alertas
+   - vencimiento
+
+   viven en `lib/domain/` como lógica de dominio pura.
+
+2. Documentar que FEFO también se utiliza como criterio de visualización de lotes (RF-09), no solo como política de despacho.
+
+3. Relacionar RLS con cumplimiento de:
+   - RNF-03 (seguridad)
+   - RNF-08 (Ley 1581 / protección de datos)
+
+4. Mantener trazabilidad consistente entre:
+   - ERS
+   - ADRs
+   - documento técnico
+   - tradeoffs
+
+Verificar:
+
+- Que ningún RF/RNF importante quede sin referencia arquitectónica.
+- Que la documentación refleje exactamente la implementación real del sistema.
+
+Commit:
+
+`docs: alineación de trazabilidad entre ERS, ADR y documento técnico`
+
 ---
 
 ## 6. Reglas duras (NO violar)
@@ -374,12 +415,13 @@ Ejemplo:
 
 - [x] Paso 1 — Bootstrap Next.js
 - [x] Paso 2 — Dependencias base
-- [ ] Paso 3 — Configuración Supabase
-- [ ] Paso 4 — Schema inicial
+- [x] Paso 3 — Configuración Supabase
+- [x] Paso 4 — Schema inicial
 - [ ] Paso 5 — Autenticación
 - [ ] Paso 6 — Layout dashboard
 - [ ] Paso 7 — Pruebas y CI
 - [ ] Paso 8 — Cierre Corte 1
+- [ ] Paso 9 — Alineación arquitectónica y trazabilidad ERS/ADR
 
 **Corte actual:** 1
 **Última actualización:** 2026-05-11 — Paso 2 completado (dependencias base, shadcn/ui, puerto 5175)

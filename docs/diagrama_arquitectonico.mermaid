@@ -1,9 +1,10 @@
 %%{init: {"theme": "base", "themeVariables": {"fontFamily": "Inter, ui-sans-serif, system-ui", "background": "#ffffff", "primaryTextColor": "#172033", "lineColor": "#64748b", "clusterBkg": "#f8fafc", "clusterBorder": "#cbd5e1"}}}%%
 flowchart TB
     subgraph Usuarios["Usuarios del SGIL"]
-        Encargado["Encargado de Inventarios<br/>Crear, editar, aprobar, reportar"]
-        Jefe["Jefe de Producción<br/>Crear, editar, consultar, reportar"]
-        Dueno["Dueños<br/>Solo lectura, indicadores y reportes"]
+        Admin["Administrador del sistema · admin_sistema<br/>Gestión de usuarios · acceso total"]
+        Jefe["Jefe de almacén · jefe_almacen<br/>Acceso operativo total · aprueba despachos"]
+        OpRecepcion["Operador de recepción · operador_recepcion<br/>Registra entradas de mercancía y lotes"]
+        OpDespacho["Operador de despacho · operador_despacho<br/>Registra salidas · pendientes de aprobación"]
     end
 
     subgraph Cliente["Cliente Web"]
@@ -16,33 +17,35 @@ flowchart TB
         subgraph Capas["Capas lógicas del sistema"]
             Presentacion["Presentación<br/>app/, components/dominio/"]
             Aplicacion["Aplicación<br/>Route Handlers, Server Actions,<br/>lib/services/"]
-            Dominio["Dominio<br/>FEFO, alertas, stock,<br/>validaciones"]
+            Dominio["Dominio<br/>FEFO (despacho y visualización RF-09),<br/>alertas, stock, punto de reorden,<br/>vencimiento, validaciones, baja de producto"]
             Infraestructura["Infraestructura<br/>lib/supabase/, lib/repositories/"]
         end
 
         API["API interna<br/>app/api/*"]
         Reportes["Reportes<br/>ExcelJS / jsPDF"]
+        Swagger["Swagger UI<br/>OpenAPI · RF-19"]
     end
 
     subgraph Supabase["Supabase Cloud"]
-        Auth["Auth<br/>Email + contraseña<br/>JWT + refresh token"]
-        DB[("PostgreSQL 16<br/>Datos operativos + RLS")]
-        Realtime["Realtime<br/>Cambios de stock y alertas"]
+        Auth["Auth<br/>Email + contraseña<br/>JWT + refresh token · bcrypt"]
+        DB[("PostgreSQL 16<br/>Datos operativos + RLS<br/>RNF-03 · RNF-08")]
+        Realtime["Realtime<br/>Alertas y cambios de stock<br/>RF-14, RF-15, RF-16 · Corte 3"]
         Storage["Storage<br/>Reportes generados"]
     end
 
     subgraph DevOps["Entrega y operación"]
         GitHub["GitHub<br/>Código + migraciones SQL"]
-        CI["GitHub Actions<br/>lint + test"]
+        CI["GitHub Actions<br/>lint + test · RNF-06"]
         SupabaseCLI["Supabase CLI<br/>db push + db:types"]
         VercelDeploy["Vercel Deploy<br/>Preview / Producción"]
     end
 
-    Encargado --> Navegador
+    Admin --> Navegador
     Jefe --> Navegador
-    Dueno --> Navegador
+    OpRecepcion --> Navegador
+    OpDespacho --> Navegador
 
-    Navegador -->|"HTTPS"| AppRouter
+    Navegador -->|"HTTPS · RNF-03"| AppRouter
     AppRouter --> Presentacion
     Presentacion --> Aplicacion
     Aplicacion --> Dominio
@@ -55,9 +58,9 @@ flowchart TB
     Infraestructura -->|"Suscripciones WebSocket"| Realtime
     Reportes -->|"Guardar / descargar"| Storage
 
-    Auth -->|"JWT con rol"| AppRouter
-    DB -->|"Políticas RLS por rol"| Infraestructura
-    Realtime -->|"Notifica cambios"| Navegador
+    Auth -->|"JWT con rol · ADR-003"| AppRouter
+    DB -->|"Políticas RLS por rol · ADR-008"| Infraestructura
+    Realtime -->|"Notifica cambios · ADR-009"| Navegador
 
     GitHub --> CI
     CI --> VercelDeploy
@@ -74,9 +77,9 @@ flowchart TB
     classDef database fill:#fefce8,stroke:#eab308,color:#713f12,stroke-width:2px
     classDef devops fill:#fdf2f8,stroke:#ec4899,color:#831843,stroke-width:2px
 
-    class Encargado,Jefe,Dueno actor
+    class Admin,Jefe,OpRecepcion,OpDespacho actor
     class Navegador client
-    class AppRouter,API,Reportes next
+    class AppRouter,API,Reportes,Swagger next
     class Presentacion,Aplicacion,Infraestructura layer
     class Dominio domain
     class Auth,Realtime,Storage supabase

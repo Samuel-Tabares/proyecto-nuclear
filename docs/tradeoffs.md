@@ -28,7 +28,7 @@ Los siguientes atributos son los más importantes para el SGIL según los requis
 
 - **Mantenibilidad:** el proyecto se entrega en tres cortes y la asignatura de Pruebas de Software exige cobertura de 70% (RNF-06).
 - **Integridad de datos:** un descuento incorrecto de stock daña la operación real del centro de distribución.
-- **Seguridad:** aplica la Ley 1581 de 2012 de protección de datos (RNF-08) y existen tres roles con permisos distintos (RF-02).
+- **Seguridad:** aplica la Ley 1581 de 2012 de protección de datos (RNF-08) y existen cuatro roles con permisos distintos: `admin_sistema`, `jefe_almacen`, `operador_recepcion`, `operador_despacho` (RF-02).
 - **Usabilidad:** los usuarios no son técnicos y deben poder operar el sistema sin capacitación formal (RNF-04).
 - **Velocidad de entrega:** plazo académico fijo de aproximadamente 10 semanas distribuidas en tres cortes.
 
@@ -78,9 +78,9 @@ Los atributos de prioridad media (rendimiento, escalabilidad, disponibilidad) so
 | **Seguridad** | bcrypt, hashing seguro, rotación de tokens, cookies httpOnly — todo gestionado y probado por Supabase. | Dependencia de la postura de seguridad del proveedor; el equipo no controla detalles internos de la implementación. |
 | **Velocidad de entrega** | No se escribe código propio de login, hashing, refresh ni recuperación de contraseña. | Personalizar el flujo (ej. agregar 2FA) requiere conocer la API de Supabase, no implementarlo libremente. |
 | **Experiencia de usuario** | Refresh automático evita re-login a mitad de jornada. | Si Supabase tiene caída de Auth, el sistema completo queda inaccesible. |
-| **Revocación de sesiones** | Posible vía `supabase.auth.admin.signOut(userId)`. | El rol cacheado en JWT no se actualiza hasta el siguiente refresh (≤ 1 h). Cambio de rol en BD no es inmediato. |
+| **Revocación de sesiones** | Posible vía `supabase.auth.admin.signOut(userId)`. Útil cuando el admin desactiva un operador. | El rol cacheado en JWT no se actualiza hasta el siguiente refresh (≤ 1 h). Cambio de rol en BD no es inmediato. |
 
-**Conclusión:** se sacrifica control fino sobre el flujo de auth a cambio de eliminar superficie de error y acelerar la entrega. Para un MVP académico con cumplimiento de RNF-03 (seguridad), el balance es ampliamente favorable.
+**Conclusión:** se sacrifica control fino sobre el flujo de auth a cambio de eliminar superficie de error y acelerar la entrega. Para un MVP académico con cuatro roles (`admin_sistema`, `jefe_almacen`, `operador_recepcion`, `operador_despacho`) y cumplimiento de RNF-03 (seguridad), el balance es ampliamente favorable.
 
 ---
 
@@ -107,7 +107,7 @@ Los atributos de prioridad media (rendimiento, escalabilidad, disponibilidad) so
 | Atributo | Lo que se gana | Lo que se sacrifica |
 |---|---|---|
 | **Adopción del cliente** | El cliente ya trabaja con Excel; no cambia su flujo de trabajo y baja la curva de adopción. | Se refuerza la dependencia del cliente con Excel y se posterga la madurez digital del centro. |
-| **Usabilidad** | Dueños y Jefe de Producción pueden seguir filtrando y compartiendo por correo como hacen hoy. | Las gráficas interactivas del dashboard se quedan en pantalla; el archivo descargado es estático. |
+| **Usabilidad** | Administrador del sistema y Jefe de almacén pueden seguir filtrando y compartiendo reportes por correo como hacen hoy. | Las gráficas interactivas del dashboard se quedan en pantalla; el archivo descargado es estático. |
 | **Mantenibilidad** | ExcelJS y jsPDF son librerías maduras y bien documentadas. | Mantener dos formatos (XLSX y PDF) duplica el código de generación, plantillas y pruebas. |
 | **Rendimiento** | Para volúmenes pequeños la generación es instantánea. | Si se filtran rangos amplios (anual) el archivo puede pesar varios MB y demorar en generarse. |
 | **Runtime** | Node runtime soporta todas las APIs de ExcelJS sin restricciones. | No se puede usar Edge runtime; aumenta levemente el tiempo de cold start en Vercel. |
@@ -155,11 +155,11 @@ Los atributos de prioridad media (rendimiento, escalabilidad, disponibilidad) so
 |---|---|---|
 | **Seguridad** | Si una validación de backend se omite o tiene bug, la BD sigue protegiendo los datos. | Las políticas RLS deben mantenerse sincronizadas con la lógica de roles del backend. |
 | **Auditabilidad** | Las políticas son SQL declarativo, fáciles de revisar. | Hay que documentar cada política y probarla con pruebas explícitas por rol. |
-| **Defensa en profundidad** | Cumple RNF-03 robustamente: dos capas independientes. | Si se agrega un rol nuevo, hay que actualizar políticas en cada tabla afectada. |
+| **Defensa en profundidad** | Cumple RNF-03 robustamente: dos capas independientes. Los cuatro roles (`admin_sistema`, `jefe_almacen`, `operador_recepcion`, `operador_despacho`) se validan en ambas capas. | Si se agrega un rol nuevo, hay que actualizar políticas en cada tabla afectada. |
 | **Rendimiento** | RLS se evalúa en planes de consulta optimizados por Postgres. | Una política mal escrita puede degradar el rendimiento de consultas grandes. |
 | **Mensajes de error** | Backend valida primero y devuelve 403 con mensaje claro. | Sin esa validación previa, los errores de RLS aparecen como "row violates policy" — confusos para el usuario. |
 
-**Conclusión:** se sacrifica mantenimiento adicional (políticas en cada tabla) a cambio de defensa en profundidad. La decisión fortalece el cumplimiento de RNF-03 (seguridad) y RNF-08 (protección de datos personales bajo Ley 1581 de 2012). Para un sistema con tres roles diferenciados y datos operativos sensibles, el costo es plenamente justificado.
+**Conclusión:** se sacrifica mantenimiento adicional (políticas en cada tabla) a cambio de defensa en profundidad. La decisión fortalece el cumplimiento de RNF-03 (seguridad) y RNF-08 (protección de datos personales bajo Ley 1581 de 2012). Para un sistema con cuatro roles diferenciados (`admin_sistema`, `jefe_almacen`, `operador_recepcion`, `operador_despacho`) y datos operativos sensibles, el costo es plenamente justificado.
 
 ---
 
@@ -170,9 +170,9 @@ Los atributos de prioridad media (rendimiento, escalabilidad, disponibilidad) so
 | Atributo | Lo que se gana | Lo que se sacrifica |
 |---|---|---|
 | **Velocidad de entrega** | WebSockets funcionales sin escribir código de servidor. Compatible con Vercel serverless. | El equipo debe aprender el modelo de canales y eventos de Supabase. |
-| **Compatibilidad con RLS** | Las suscripciones respetan RLS: un Dueño solo recibe eventos sobre filas que puede ver. | Si una política RLS está mal, la suscripción también filtra mal — bug compuesto. |
+| **Compatibilidad con RLS** | Las suscripciones respetan RLS: cada rol solo recibe eventos sobre las filas que tiene permiso de ver. | Si una política RLS está mal, la suscripción también filtra mal — bug compuesto. |
 | **Costo operativo** | Plan gratuito incluye 200 conexiones concurrentes, suficiente para 5 usuarios (RNF-01). | Crecer más allá implica plan pago o cambiar de proveedor. |
-| **UX** | Alertas y stock se actualizan sin recargar página (RF-14, RF-15, RF-16). | Si la conexión WebSocket se pierde temporalmente, el panel puede quedar desactualizado hasta reconectar. |
+| **UX** | Alertas y stock se actualizan sin recargar página (RF-14, RF-15, RF-16 — implementados en Corte 3). El panel incluye alertas de stock mínimo, vencimiento próximo y pedidos pendientes de despacho. | Si la conexión WebSocket se pierde temporalmente, el panel puede quedar desactualizado hasta reconectar. |
 | **Simplicidad de modelo** | La BD es la fuente de verdad; Realtime solo notifica. No hay lógica duplicada. | El cliente debe re-consultar tras recibir notificación; no usar el payload del evento como fuente de datos. |
 
 **Conclusión:** se sacrifica autonomía de la capa realtime a cambio de no mantener un servidor WebSocket propio. Para un equipo sin experiencia previa en infraestructura distribuida (contexto declarado en ADR-001), el sacrificio es claramente favorable.

@@ -1,0 +1,119 @@
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "primaryColor": "#2563eb",
+    "primaryTextColor": "#ffffff",
+    "primaryBorderColor": "#1e40af",
+    "lineColor": "#64748b",
+    "secondaryColor": "#0f172a",
+    "tertiaryColor": "#f8fafc",
+    "background": "#ffffff",
+    "fontFamily": "Inter"
+  }
+}}%%
+
+erDiagram
+
+    PERFILES {
+        uuid id PK
+        string nombre
+        enum rol "admin_sistema|jefe_almacen|operador_recepcion|operador_despacho"
+        boolean activo
+        timestamp creado_en
+    }
+
+    PRODUCTOS {
+        uuid id PK
+        string codigo UK
+        string nombre
+        enum categoria "tortas|galleteria|postres"
+        decimal peso
+        text ingredientes
+        string etiqueta
+        int punto_reorden
+        int dias_min_vencimiento
+        boolean activo
+        timestamp creado_en
+        timestamp actualizado_en
+    }
+
+    BODEGAS {
+        uuid id PK
+        enum tipo "principal|produccion|neveras"
+        string nombre
+    }
+
+    LOTES {
+        uuid id PK
+        uuid producto_id FK
+        uuid bodega_id FK
+        string numero_lote
+        date fecha_vencimiento
+        date fecha_recepcion
+        int cantidad_inicial
+        int cantidad_actual
+        enum estado "vigente|agotado|vencido"
+        timestamp creado_en
+    }
+
+    ORDENES_RECEPCION {
+        uuid id PK
+        string numero_orden UK
+        string numero_factura UK
+        date fecha_recepcion
+        uuid usuario_id FK
+        enum estado "pendiente|recibida"
+        timestamp creado_en
+    }
+
+    DESPACHOS {
+        uuid id PK
+        date fecha
+        string destino_interno
+        uuid usuario_id FK
+        uuid aprobado_por FK
+        enum estado "pendiente|aprobado|despachado"
+        timestamp creado_en
+    }
+
+    MOVIMIENTOS {
+        uuid id PK
+        uuid lote_id FK
+        enum tipo "entrada|salida|ajuste"
+        int cantidad
+        uuid referencia_id
+        uuid usuario_id FK
+        timestamp creado_en
+    }
+
+    ALERTAS {
+        uuid id PK
+        enum tipo "stock_minimo|vencimiento_proximo|vencido"
+        uuid producto_id FK
+        uuid lote_id FK
+        enum severidad "advertencia|critico"
+        boolean activa
+        timestamp creado_en
+    }
+
+    PERFILES ||--o{ ORDENES_RECEPCION : "registra"
+
+    PERFILES ||--o{ DESPACHOS : "crea"
+
+    PERFILES ||--o{ DESPACHOS : "aprueba"
+
+    PERFILES ||--o{ MOVIMIENTOS : "realiza"
+
+    PRODUCTOS ||--o{ LOTES : "tiene"
+
+    PRODUCTOS ||--o{ ALERTAS : "genera"
+
+    BODEGAS ||--o{ LOTES : "almacena"
+
+    ORDENES_RECEPCION ||--|{ LOTES : "genera"
+
+    LOTES ||--o{ MOVIMIENTOS : "afecta"
+
+    LOTES ||--o{ ALERTAS : "genera"
+
+    DESPACHOS ||--o{ MOVIMIENTOS : "compone"
